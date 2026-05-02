@@ -1,0 +1,15 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  FunctionName:
+    Type: String
+  AlertEmail:
+    Type: String
+    Default: 'ops-team@yourcompany.com'
+
+Resources:
+  AlarmNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub 'alerts-${FunctionName}'
+  EmailSubscriptions:
+    Type: AWS::SNS::Subscription

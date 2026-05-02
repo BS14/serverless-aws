@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Simple  lambda function
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+    - dev
+    - prod
+Resources:
+  HelloFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: hello-world-${Environment}
+      Runtime: python3.14
+      Handler: lambda_function.lambda_handler
+      CodeUri: HelloFunction
+      MemorySize: 128
+      Timeout: 10
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      Environment:
+        Variables:
+          LOG_LEVEL: INFO
+          ENV:
+            Ref: Environment
+    Metadata:
+      SamResourceId: HelloFunction
