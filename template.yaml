@@ -9,6 +9,9 @@ Parameters:
     AllowedValues:
       - dev
       - prod
+  AlertEmail:
+    Type: String
+    Default: 'ops-team@example.com'
 
 Resources:
   HelloFunction:
@@ -26,3 +29,52 @@ Resources:
         Variables:
           LOG_LEVEL: INFO
           ENV: !Ref Environment
+
+# Alert Resources
+  AlarmNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      # Automatically uses the function name generated above
+      TopicName: !Sub 'alerts-hello-world-${Environment}'
+
+  EmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !Ref AlertEmail
+      Protocol: email
+      TopicArn: !Ref AlarmNotificationTopic
+
+  LambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub 'Alert when hello-world-${Environment} fails'
+      AlarmActions:
+        - !Ref AlarmNotificationTopic
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: FunctionName
+          # References your SAM function resource directly
+          Value: !Ref HelloFunction
+
+  LambdaThrottleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub 'Alert when hello-world-${Environment} is throttled'
+      AlarmActions:
+        - !Ref AlarmNotificationTopic
+      MetricName: Throttles
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref HelloFunction
