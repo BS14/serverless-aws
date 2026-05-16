@@ -14,6 +14,21 @@ Parameters:
     Default: 'ops-team@example.com'
 
 Resources:
+  # Parameter Store — non-sensitive config
+  ApiUrlParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/hello-world/${Environment}/api-url'
+      Type: String
+      Value: 'https://api.example.com'
+
+  # Secrets Manager — sensitive value
+  ApiKeySecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub 'hello-world/${Environment}/api-key'
+      SecretString: '{"api_key": "replace-with-real-secret"}'
+
   HelloFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -25,16 +40,21 @@ Resources:
       Timeout: 10
       Policies:
         - AWSLambdaBasicExecutionRole
+        - SSMParameterReadPolicy:
+            ParameterName: !Sub 'hello-world/${Environment}/api-url'
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref ApiKeySecret
       Environment:
         Variables:
           LOG_LEVEL: INFO
           ENV: !Ref Environment
+          SSM_PARAMETER_NAME: !Sub '/hello-world/${Environment}/api-url'
+          SECRET_ARN: !Ref ApiKeySecret
 
 # Alert Resources
   AlarmNotificationTopic:
     Type: AWS::SNS::Topic
     Properties:
-      # Automatically uses the function name generated above
       TopicName: !Sub 'alerts-hello-world-${Environment}'
 
   EmailSubscription:
@@ -59,7 +79,6 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
         - Name: FunctionName
-          # References your SAM function resource directly
           Value: !Ref HelloFunction
 
   LambdaThrottleAlarm:
