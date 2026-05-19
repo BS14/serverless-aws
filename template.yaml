@@ -35,7 +35,7 @@ Resources:
       FunctionName: !Sub hello-world-${Environment}
       Runtime: python3.14
       Handler: lambda_function.lambda_handler
-      CodeUri: .
+      CodeUri: src/
       MemorySize: 128
       Timeout: 10
       Policies:
